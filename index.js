@@ -298,7 +298,7 @@ async function primary () {
             }
             case "exit": {
                 terminateCircuito = true;
-                console.log("thank you for using employee tracker")
+                console.log("Thank you for using employee tracker")
                 process.exit(0);
             }
             default:
