@@ -235,7 +235,7 @@ async function addEmployee () {
                 message: "Assign manager (if applicable): ",
                 name: "manager",
                 choices: [
-                    //populating from seeded db 
+                    //populating from seeded db
                     ...managers, "null"
                 ]
             }
@@ -254,7 +254,7 @@ async function acquireSlashHireInfo () {
                 ...roster
             ]
         }
-    ])
+    ]);
 };
 
 
