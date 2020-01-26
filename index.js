@@ -19,6 +19,17 @@ async function viewAllEmployees () {
     console.table(rows)
 };
 
+//get employee names
+async function acquireEmployeeRoster () {
+    const query = `SELECT*FROM employee`;
+    const rows = await connection.query(query);
+    let names = [];
+    for (const employee of rows) {
+        names.push(`${employee.first_name} ${employee.last_name}`);
+    }
+    return names
+};
+
 //view all departments
 async function obtainAllDepartments () {
     const query = `SELECT id AS 'ID', name AS 'Department' FROM department`;
@@ -158,17 +169,11 @@ async function slashHire(employeeName) {
         }
     }) 
 };
+
+
 /*  SELECT first_name AS 'First Name', last_name AS 'Last Name', department.name AS 'Department Name' FROM 
         ((employee INNER JOIN role ON role_id = role.id) 
         INNER JOIN department ON department_id = department.id) */
-
-
-
-
-
-
-
-
 
 
 async function uiPrompt() {
@@ -237,6 +242,21 @@ async function addEmployee () {
         ])
 };
 
+async function acquireSlashHireInfo () {
+    const roster = await acquireEmployeeRoster();
+    return inquirer.prompt([
+        {
+            type: "list",
+            message: "Select employee to remove: ",
+            name: "employee",
+            choices: [
+                //populating from seeded db
+                ...roster
+            ]
+        }
+    ])
+};
+
 
 //asynchronous to increase app performance && responsiveness
 async function primary () {
@@ -277,8 +297,8 @@ async function primary () {
                 break;
             }
             case "remove employee": {
-                const ejected = await obtainSlashHireInfo();
-                await slashHire(ejected);
+                const eject = await acquireSlashHireInfo();
+                await slashHire(eject);
                 break;
             }
             case "update employee role": {
