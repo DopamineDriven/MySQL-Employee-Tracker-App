@@ -2,7 +2,7 @@ const mysql=require("mysql");
 
 
 //async database constructor
-class dbConstructor {
+class Database {
     constructor(config) {
         this.connection = mysql.createConnection(config);
     }
@@ -33,4 +33,4 @@ class dbConstructor {
     }
 };
 
-module.exports = dbConstructor;
+module.exports = Database;
