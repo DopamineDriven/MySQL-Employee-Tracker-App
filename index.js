@@ -19,6 +19,36 @@ async function viewAllEmployees () {
     console.table(rows)
 };
 
+//add new role
+async function addRole (roleInformation) {
+    const departmentId = await obtainDepartmentId(roleInformation.departmentName);
+    const salary = roleInformation.salary;
+    const role = roleInformation.roleName;
+    const query = `INSERT into role (role, salary, department_id) VALUES (?, ?, ?)`;
+    const args = [role, salary, departmentId];
+    await connection.query(query, args);
+    console.log(`${role} added successfully.`)  
+};
+
+//update employee role
+async function updateEmpRole(info) {
+    const roleId = await obtainRoleId(info.role);
+    const employee = employeeRoster(info.name);
+    const query = `UPDATE employee SET role_id = ? WHERE employee.first_name = ? AND employee.last_name = ?`;
+    const args  = [roleId, employee[0], employee[1]];
+    await connection.query(query, args);
+    console.log(`updated ${employee[0]} ${employee[1]} with a new role: ${info.role}`)
+};
+
+//add department
+async function acquireDepartmentInfo (departmentInfo) {
+    const departmentName =departmentInfo.departmentName;
+    const query = `INSERT into department (name) VALUES (?)`;
+    const args = [departmentName];
+    const rows = await connection.query(query, args);
+    console.log(`${departmentName} added as new department.`)
+}
+
 //get employee names
 async function acquireEmployeeRoster () {
     const query = `SELECT*FROM employee`;
@@ -104,6 +134,17 @@ async function obtainRoleId (roleName) {
             return rows[0].id
     };
 
+//get department names
+async function obtainDepartmentNames () {
+    const query = `SELECT name FROM department`;
+    const rows = connection.query(query);
+    let departments = [];
+    for (const row of rows) {
+        departments.push(row.name)
+    }
+    return departments
+};
+
 //get employee ID
 async function obtainEmployeeId (employeeName) {
     if (employeeName === "None") {
@@ -120,6 +161,14 @@ async function obtainEmployeeId (employeeName) {
             return rows[0].id
         }
     })
+};
+
+//get department by id
+async function obtainDepartmentId (departmentName) {
+    const query = `SELECT * FROM department WHERE department.name = ?`;
+    const args = [departmentName];
+    const rows = await connection.query(query, args);
+    return rows[0].id
 };
 
 //retrieve employee roster
@@ -156,26 +205,20 @@ async function insertEmployee (employee) {
 };
 
 //remove emploee 
-async function slashHire(employeeName) {
-    const firstName = employeeName.split(' ')[0];
-    const lastName = employee.Name.split(' ')[1];
+async function slashHire(employeeInfo) {
+    const employeeName = acquireEmployeeRoster(employeeInfo.employeeName);
     query = `DELETE FROM employee WHERE first_name = ? AND last_name = ?`;
-    connection.query(query, [firstName, lastName], (error) => {
-        if (error) {
-            console.log(error)
-            throw error
-        } else {
-            console.log('Employee removed successfully.')
-        }
-    }) 
-};
+    const args = [employeeName[0], employeeName[1]];
+    const rows = await connection.query(query, args);
+    console.log(`${employeeName[0]} ${employeeName[1]} successfully removed.`);
+    };
 
 
 /*  SELECT first_name AS 'First Name', last_name AS 'Last Name', department.name AS 'Department Name' FROM 
         ((employee INNER JOIN role ON role_id = role.id) 
         INNER JOIN department ON department_id = department.id) */
 
-
+//this function is the list the user will interact with; hence, uiPrompt
 async function uiPrompt() {
     console.log('\n')
     return inquirer.prompt({
@@ -242,8 +285,9 @@ async function addEmployee () {
         ])
 };
 
+//delete employee
 async function acquireSlashHireInfo () {
-    const roster = await acquireEmployeeRoster();
+    const employees = await acquireEmployeeRoster();
     return inquirer.prompt([
         {
             type: "list",
@@ -251,12 +295,71 @@ async function acquireSlashHireInfo () {
             name: "employee",
             choices: [
                 //populating from seeded db
-                ...roster
+                ...employees
             ]
         }
     ]);
 };
 
+//update employee role
+async function updateEmployeeRole () {
+    const roster = await acquireEmployeeRoster();
+    const roles = obtainRoles();
+    return inquirer.prompt([
+        {
+            type: "list",
+            message: "Select employee to update role",
+            name: "employee",
+            choices: [
+                ...roster
+            ]
+        },
+        {
+            type: "list",
+            message: "Select new role for employee",
+            name: "role",
+            choices: [
+                ...roles
+            ]
+        }
+    ])
+};
+
+//add department
+async function addDepartment() {
+    return inquirer.prompt([
+        {
+            type: "input",
+            message: "Enter new department name",
+            name: "departmentName"
+        }
+    ]) 
+};
+
+//add role
+async function obtainRoleInfo() {
+    const depts = await obtainDepartmentNames();
+    return inquirer.prompt ([
+        {
+            type: "input",
+            message: "Enter title of new role: ",
+            name: "role"
+        },
+        {
+            type: "input",
+            message: "enter salary of new role (no commas): ",
+            name: "salary"
+        },
+        {
+            type: "list",
+            message: "Assign new role to an existing department: ",
+            name: "departmentName",
+            choices: [
+                ...depts
+            ]
+        }
+    ])
+}
 
 //asynchronous to increase app performance && responsiveness
 async function primary () {
@@ -296,26 +399,31 @@ async function primary () {
                 await insertEmployee(newHire);
                 break;
             }
+            //done*
             case "remove employee": {
                 const eject = await acquireSlashHireInfo();
                 await slashHire(eject);
                 break;
             }
+            //****/
             case "update employee role": {
-                const updateRole = await obtainUpdateEmployeeRole();
-                await obtainUpdateEmployeeRole(updateRole);
+                const updateRole = await updateEmployeeRole();
+                await updateEmpRole(updateRole);
                 break;
             }
+            //done
             case "add department": {
-                const departmentAdd = await obtainDepartmentInfo();
-                await addDepartment(departmentAdd);
+                const departmentAdd = await addDepartment();
+                await acquireDepartmentInfo(departmentAdd);
                 break;
             }
+            //
             case "add role": {
                 const roleAdd = await obtainRoleInfo();
                 await addRole(roleAdd);
                 break;
             }
+            //done
             case "exit": {
                 terminateCircuito = true;
                 console.log("Thank you for using employee tracker")
