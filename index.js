@@ -1,5 +1,6 @@
 const inquirer = require("inquirer");
 const Database = require("./db.js");
+const cTable = require("console.table");
 //cTable
 //figlet
 
@@ -96,6 +97,8 @@ async function obtainAllRoles () {
 async function obtainManagerNames () {
     const query = `SELECT * FROM employee WHERE manager_id IS NULL`;
     const rows = await connection.query(query);
+    console.log(employee)
+    console.log(employeeNames)
     let employeeNames = [];
     for(const employee of rows) {
         employeeNames.push(`${employee.first_name} ${employee.last_name}`)
