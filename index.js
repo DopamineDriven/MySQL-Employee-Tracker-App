@@ -27,13 +27,14 @@ async function addRole (roleInformation) {
     const query = `INSERT into role (role, salary, department_id) VALUES (?, ?, ?)`;
     const args = [role, salary, departmentId];
     await connection.query(query, args);
-    console.log(`${role} added successfully.`)  
+    console.log(`New role added successfully.`)  
 };
 
 //update employee role
 async function updateEmpRole(info) {
+    console.log(info)
     const roleId = await obtainRoleId(info.role);
-    const employee = employeeRoster(info.name);
+    const employee = employeeRoster(info.employee);
     const query = `UPDATE employee SET role_id = ? WHERE employee.first_name = ? AND employee.last_name = ?`;
     const args  = [roleId, employee[0], employee[1]];
     await connection.query(query, args);
@@ -60,6 +61,7 @@ async function acquireEmployeeRoster () {
     return names
 };
 
+
 //view all departments
 async function obtainAllDepartments () {
     const query = `SELECT id AS 'ID', name AS 'Department' FROM department`;
@@ -72,11 +74,15 @@ async function obtainRoles () {
     const query = `SELECT role FROM role`;
     const rows = await connection.query(query);
     let roles = [];
+    console.log(roles)
+    console.log(rows)
     for(const row of rows) {
         roles.push(row.role)
-    }
+    } 
     return roles;
 };
+
+
 
 
 //view all roles
@@ -137,8 +143,9 @@ async function obtainRoleId (roleName) {
 //get department names
 async function obtainDepartmentNames () {
     const query = `SELECT name FROM department`;
-    const rows = connection.query(query);
+    const rows = await connection.query(query);
     let departments = [];
+    console.log(rows)
     for (const row of rows) {
         departments.push(row.name)
     }
@@ -173,16 +180,9 @@ async function obtainDepartmentId (departmentName) {
 
 //retrieve employee roster
 const employeeRoster = (name) => {
+    console.log(name)
     let staff = name.split(' ');
-    if (staff.len == 2) {
-        return employee;
-    }
-    const lastName = staff[staff.len-1];
-    let firstName = " ";
-    for(let i = 0; i<staff.len; i++) {
-        firstName = firstName + staff[i] + " ";
-    }
-    return [firstName.trim(), lastName];
+    return staff;
 }
 
 //add an employee
@@ -205,12 +205,14 @@ async function insertEmployee (employee) {
 };
 
 //remove emploee 
-async function slashHire(employeeInfo) {
-    const employeeName = acquireEmployeeRoster(employeeInfo.employeeName);
+async function slashHire(employeeName) {
+    console.log(employeeName)
+    const firstName = employeeName.employee.split(' ')[0];
+    const lastName = employeeName.employee.split(' ')[1];
+    console.log(employeeName)
     query = `DELETE FROM employee WHERE first_name = ? AND last_name = ?`;
-    const args = [employeeName[0], employeeName[1]];
-    const rows = await connection.query(query, args);
-    console.log(`${employeeName[0]} ${employeeName[1]} successfully removed.`);
+    await connection.query(query, [firstName, lastName]);
+    console.log(`${firstName} ${lastName} successfully removed.`);
     };
 
 
@@ -304,7 +306,7 @@ async function acquireSlashHireInfo () {
 //update employee role
 async function updateEmployeeRole () {
     const roster = await acquireEmployeeRoster();
-    const roles = obtainRoles();
+    const roles = await obtainRoles();
     return inquirer.prompt([
         {
             type: "list",
@@ -339,6 +341,7 @@ async function addDepartment() {
 //add role
 async function obtainRoleInfo() {
     const depts = await obtainDepartmentNames();
+    console.log(depts)
     return inquirer.prompt ([
         {
             type: "input",
@@ -399,13 +402,13 @@ async function primary () {
                 await insertEmployee(newHire);
                 break;
             }
-            //done*
+            //done
             case "remove employee": {
                 const eject = await acquireSlashHireInfo();
                 await slashHire(eject);
                 break;
             }
-            //****/
+            //done
             case "update employee role": {
                 const updateRole = await updateEmployeeRole();
                 await updateEmpRole(updateRole);
@@ -417,7 +420,7 @@ async function primary () {
                 await acquireDepartmentInfo(departmentAdd);
                 break;
             }
-            //
+            //done
             case "add role": {
                 const roleAdd = await obtainRoleInfo();
                 await addRole(roleAdd);
