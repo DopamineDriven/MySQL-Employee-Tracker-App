@@ -1,4 +1,3 @@
-
 USE employee_track_app_db;
 
 INSERT INTO department (name)
